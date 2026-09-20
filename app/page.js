@@ -17,6 +17,10 @@ export default async function HomePage() {
   const { data: featured } = await db.from("desserts").select("*").eq("featured", true).eq("available", true).limit(3);
   const { data: settings } = await db.from("shop_settings").select("*").eq("id", 1).single();
   const { hero, featuredDessert } = TANGZEE_CONTENT;
+  const heroImage = settings?.hero_image_url || hero.image;
+  const heroTitle = settings?.hero_title || hero.title;
+  const heroSubtitle = settings?.hero_subtitle || hero.subtitle;
+  const featuredImage = settings?.featured_image_url || featuredDessert.image;
 
   return (
     <main style={{ background: IVORY }}>
@@ -31,11 +35,11 @@ export default async function HomePage() {
         </nav>
       </header>
 
-      <section className="fade-up" style={{ position: "relative", minHeight: "78vh", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", overflow: "hidden", backgroundColor: DEEP_PLUM, backgroundImage: `linear-gradient(180deg, rgba(29,20,36,0.55), rgba(29,20,36,0.85)), url(${hero.image})`, backgroundSize: "cover", backgroundPosition: "center" }}>
+      <section className="fade-up" style={{ position: "relative", minHeight: "78vh", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", overflow: "hidden", backgroundColor: DEEP_PLUM, backgroundImage: `linear-gradient(180deg, rgba(29,20,36,0.55), rgba(29,20,36,0.85)), url(${heroImage})`, backgroundSize: "cover", backgroundPosition: "center" }}>
         <div style={{ padding: "0 24px", maxWidth: 480 }}>
           <p style={{ color: GOLD, letterSpacing: 4, fontSize: 12, fontFamily: "var(--font-sans)", marginBottom: 18 }}>{hero.eyebrow}</p>
-          <h1 style={{ color: IVORY, fontFamily: "var(--font-serif)", fontWeight: 500, fontSize: 40, lineHeight: 1.15, margin: 0 }}>{hero.title}</h1>
-          <p style={{ color: CREAM, fontSize: 15, marginTop: 20, fontStyle: "italic", opacity: 0.9 }}>{hero.subtitle}</p>
+          <h1 style={{ color: IVORY, fontFamily: "var(--font-serif)", fontWeight: 500, fontSize: 40, lineHeight: 1.15, margin: 0 }}>{heroTitle}</h1>
+          <p style={{ color: CREAM, fontSize: 15, marginTop: 20, fontStyle: "italic", opacity: 0.9 }}>{heroSubtitle}</p>
           <Link href="/desserts" style={{ display: "inline-block", marginTop: 32, padding: "14px 28px", border: `1px solid ${GOLD}`, color: GOLD, fontSize: 12, letterSpacing: 2, textTransform: "uppercase", textDecoration: "none" }}>
             Explore our desserts &rarr;
           </Link>
@@ -64,7 +68,7 @@ export default async function HomePage() {
 
       <section className="fade-up" style={{ background: WARM_PLUM, display: "flex", flexDirection: "column" }}>
         <div className="tangzee-zoom-wrap" style={{ height: 320 }}>
-          <img src={featuredDessert.image} alt="Featured dessert" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          <img src={featuredImage} alt="Featured dessert" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
         </div>
         <div style={{ padding: "40px 24px", color: IVORY, textAlign: "center" }}>
           <p style={{ color: GOLD, letterSpacing: 3, fontSize: 11, marginBottom: 10 }}>{featuredDessert.label}</p>
@@ -107,4 +111,4 @@ export default async function HomePage() {
       </footer>
     </main>
   );
-  }
+}
