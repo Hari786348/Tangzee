@@ -1,8 +1,14 @@
 import Link from "next/link";
 import { supabaseAdmin } from "../lib/supabaseServer";
+import { TANGZEE_CONTENT } from "../lib/content";
 
-const PLUM = "#2F243A";
-const DARK_PLUM = "#3A2E3B";
+const DEEP_PLUM = "#2F243A";
+const DARKER_PLUM = "#1D1424";
+const WARM_PLUM = "#3A2C42";
+const CREAM = "#F7F0E5";
+const IVORY = "#FFF9F0";
+const GOLD = "#D8B36A";
+const LIGHT_GOLD = "#E8CC91";
 
 export const revalidate = 0;
 
@@ -10,69 +16,95 @@ export default async function HomePage() {
   const db = supabaseAdmin();
   const { data: featured } = await db.from("desserts").select("*").eq("featured", true).eq("available", true).limit(3);
   const { data: settings } = await db.from("shop_settings").select("*").eq("id", 1).single();
+  const { hero, featuredDessert } = TANGZEE_CONTENT;
 
   return (
-    <main style={{ background: "#FFFFFF", color: "#000" }}>
-      {/* HERO */}
-      <section style={{ background: PLUM, color: "#fff", padding: "48px 20px", textAlign: "center" }}>
-        <img src="/brand/tangzee-logo.png" alt="Tangzee" style={{ width: 120, height: 120, borderRadius: "50%", margin: "0 auto" }} />
-        <p style={{ marginTop: 20, letterSpacing: 2, opacity: 0.85, fontSize: 13 }}>PREMIUM DESSERTS</p>
-        <p style={{ maxWidth: 320, margin: "12px auto 0", opacity: 0.9, fontSize: 15 }}>
-          Every Tangzee dessert is made to be noticed — and the difference is always worth finding.
-        </p>
-        <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 28, flexWrap: "wrap" }}>
-          <Link href="/desserts" style={primaryBtn}>EXPLORE TANGZEE</Link>
-          <Link href="/only-1-difference" style={secondaryBtn}>ONLY 1 DIFFERENCE</Link>
+    <main style={{ background: IVORY }}>
+      <header style={{ background: DARKER_PLUM, padding: "18px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 }}>
+        <img src="/brand/tangzee-logo.png" alt="Tangzee" style={{ width: 40, height: 40, borderRadius: "50%" }} />
+        <nav style={{ display: "flex", gap: 18 }}>
+          {[["Desserts", "/desserts"], ["Only 1 Difference", "/only-1-difference"], ["My Journey", "/my-journey"]].map(([label, href]) => (
+            <Link key={href} href={href} className="tangzee-gold-underline" style={{ color: CREAM, fontSize: 12, letterSpacing: 1, textTransform: "uppercase" }}>
+              {label}
+            </Link>
+          ))}
+        </nav>
+      </header>
+
+      <section className="fade-up" style={{ position: "relative", minHeight: "78vh", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", overflow: "hidden", backgroundColor: DEEP_PLUM, backgroundImage: `linear-gradient(180deg, rgba(29,20,36,0.55), rgba(29,20,36,0.85)), url(${hero.image})`, backgroundSize: "cover", backgroundPosition: "center" }}>
+        <div style={{ padding: "0 24px", maxWidth: 480 }}>
+          <p style={{ color: GOLD, letterSpacing: 4, fontSize: 12, fontFamily: "var(--font-sans)", marginBottom: 18 }}>{hero.eyebrow}</p>
+          <h1 style={{ color: IVORY, fontFamily: "var(--font-serif)", fontWeight: 500, fontSize: 40, lineHeight: 1.15, margin: 0 }}>{hero.title}</h1>
+          <p style={{ color: CREAM, fontSize: 15, marginTop: 20, fontStyle: "italic", opacity: 0.9 }}>{hero.subtitle}</p>
+          <Link href="/desserts" style={{ display: "inline-block", marginTop: 32, padding: "14px 28px", border: `1px solid ${GOLD}`, color: GOLD, fontSize: 12, letterSpacing: 2, textTransform: "uppercase", textDecoration: "none" }}>
+            Explore our desserts &rarr;
+          </Link>
         </div>
       </section>
 
-      {/* FEATURED DESSERTS */}
-      {featured && featured.length > 0 && (
-        <section style={{ padding: "40px 20px", maxWidth: 640, margin: "0 auto" }}>
-          <h2 style={sectionHeading}>FEATURED</h2>
-          <div style={{ display: "grid", gap: 16, marginTop: 16 }}>
+      <section className="fade-up" style={{ padding: "64px 20px", maxWidth: 720, margin: "0 auto" }}>
+        <p style={{ textAlign: "center", color: GOLD, letterSpacing: 3, fontSize: 11, marginBottom: 8 }}>THE COLLECTION</p>
+        <h2 style={{ textAlign: "center", fontFamily: "var(--font-serif)", color: DEEP_PLUM, fontWeight: 500, fontSize: 28, margin: "0 0 40px" }}>Every dessert, made to be noticed</h2>
+        {featured && featured.length > 0 ? (
+          <div style={{ display: "grid", gap: 20 }}>
             {featured.map((d) => (
-              <div key={d.id} style={{ border: "1px solid #00000012", borderRadius: 10, padding: 16 }}>
-                <p style={{ margin: 0, fontWeight: 600 }}>{d.name}</p>
-                {d.description && <p style={{ margin: "4px 0 0", fontSize: 13, color: "#666" }}>{d.description}</p>}
-                <p style={{ margin: "8px 0 0", color: PLUM, fontWeight: 700 }}>₹{d.price}</p>
+              <div key={d.id} className="tangzee-card" style={{ border: `1px solid ${GOLD}33`, borderRadius: 4, padding: 24, background: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <p style={{ margin: 0, fontFamily: "var(--font-serif)", fontSize: 18, color: DEEP_PLUM }}>{d.name}</p>
+                  {d.description && <p style={{ margin: "6px 0 0", fontSize: 13, color: "#6b5f6e" }}>{d.description}</p>}
+                </div>
+                <span style={{ color: GOLD, fontFamily: "var(--font-serif)", fontSize: 18 }}>&rarr;</span>
               </div>
             ))}
           </div>
-        </section>
-      )}
-
-      {/* CAMPAIGN CALLOUT */}
-      <section style={{ background: DARK_PLUM, color: "#fff", padding: "40px 20px", textAlign: "center" }}>
-        <h2 style={{ ...sectionHeading, color: "#fff" }}>ONLY 1 DIFFERENCE</h2>
-        <p style={{ maxWidth: 320, margin: "8px auto 0", opacity: 0.85, fontSize: 14 }}>
-          Find it on the poster. Circle it. Scan the code. Claim your Tangzee.
-        </p>
+        ) : (
+          <p style={{ textAlign: "center", color: "#8a7d8c" }}>New desserts coming soon.</p>
+        )}
       </section>
 
-      {/* 7-ORDER JOURNEY CALLOUT */}
-      <section style={{ padding: "40px 20px", maxWidth: 480, margin: "0 auto", textAlign: "center" }}>
-        <h2 style={sectionHeading}>YOUR JOURNEY</h2>
-        <p style={{ fontSize: 14, color: "#444", marginTop: 8 }}>
-          7 orders. Then, a little deliciousness for your mind.
-        </p>
-        <Link href="/my-journey" style={{ ...primaryBtn, background: PLUM, color: "#fff", display: "inline-block", marginTop: 16 }}>
-          MY JOURNEY
+      <section className="fade-up" style={{ background: WARM_PLUM, display: "flex", flexDirection: "column" }}>
+        <div className="tangzee-zoom-wrap" style={{ height: 320 }}>
+          <img src={featuredDessert.image} alt="Featured dessert" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        </div>
+        <div style={{ padding: "40px 24px", color: IVORY, textAlign: "center" }}>
+          <p style={{ color: GOLD, letterSpacing: 3, fontSize: 11, marginBottom: 10 }}>{featuredDessert.label}</p>
+          {featured && featured[0] ? (
+            <>
+              <h3 style={{ fontFamily: "var(--font-serif)", fontSize: 24, margin: 0, fontWeight: 500 }}>{featured[0].name}</h3>
+              {featured[0].description && <p style={{ fontSize: 14, opacity: 0.85, marginTop: 10, maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>{featured[0].description}</p>}
+              <p style={{ fontFamily: "var(--font-serif)", fontSize: 20, color: LIGHT_GOLD, marginTop: 14 }}>&#8377;{featured[0].price}</p>
+            </>
+          ) : (
+            <p style={{ opacity: 0.7, fontSize: 14 }}>Set a featured dessert from the owner dashboard.</p>
+          )}
+        </div>
+      </section>
+
+      <section className="fade-up" style={{ background: DEEP_PLUM, color: IVORY, padding: "56px 24px", textAlign: "center" }}>
+        <p style={{ color: GOLD, letterSpacing: 3, fontSize: 11, marginBottom: 10 }}>THE CAMPAIGN</p>
+        <h2 style={{ fontFamily: "var(--font-serif)", fontSize: 26, fontWeight: 500, margin: 0 }}>Only 1 Difference</h2>
+        <p style={{ fontSize: 14, opacity: 0.85, maxWidth: 320, margin: "14px auto 0" }}>Find it on the poster. Circle it. Scan the code. Claim your Tangzee.</p>
+        <Link href="/only-1-difference" style={{ display: "inline-block", marginTop: 24, padding: "12px 24px", border: `1px solid ${GOLD}`, color: GOLD, fontSize: 12, letterSpacing: 1.5, textTransform: "uppercase", textDecoration: "none" }}>
+          See the campaign
         </Link>
       </section>
 
-      {/* SHOP INFO */}
-      <footer style={{ background: "#000", color: "#fff", padding: "32px 20px", textAlign: "center", fontSize: 13 }}>
-        <img src="/brand/tangzee-logo.png" alt="Tangzee" style={{ width: 48, height: 48, borderRadius: "50%", marginBottom: 12 }} />
-        <p style={{ margin: "4px 0" }}>{settings?.shop_name || "Tangzee"}</p>
+      <section className="fade-up" style={{ background: CREAM, padding: "56px 24px", textAlign: "center" }}>
+        <p style={{ color: GOLD, letterSpacing: 3, fontSize: 11, marginBottom: 10 }}>LOYALTY, REIMAGINED</p>
+        <h2 style={{ fontFamily: "var(--font-serif)", color: DEEP_PLUM, fontSize: 24, fontWeight: 500, margin: 0 }}>Your Journey</h2>
+        <p style={{ fontSize: 14, color: "#6b5f6e", marginTop: 10 }}>7 orders. Then, a little deliciousness for your mind.</p>
+        <Link href="/my-journey" style={{ display: "inline-block", marginTop: 20, padding: "12px 24px", background: DEEP_PLUM, color: IVORY, fontSize: 12, letterSpacing: 1.5, textTransform: "uppercase", textDecoration: "none" }}>
+          My Journey
+        </Link>
+      </section>
+
+      <footer style={{ background: DARKER_PLUM, color: CREAM, padding: "36px 24px", textAlign: "center", fontSize: 13 }}>
+        <img src="/brand/tangzee-logo.png" alt="Tangzee" style={{ width: 44, height: 44, borderRadius: "50%", marginBottom: 14 }} />
+        <p style={{ margin: "4px 0", fontFamily: "var(--font-serif)", fontSize: 16 }}>{settings?.shop_name || "Tangzee"}</p>
         {settings?.address && <p style={{ margin: "4px 0", opacity: 0.7 }}>{settings.address}</p>}
         {settings?.opening_hours && <p style={{ margin: "4px 0", opacity: 0.7 }}>{settings.opening_hours}</p>}
         {settings?.instagram && <p style={{ margin: "4px 0", opacity: 0.7 }}>{settings.instagram}</p>}
       </footer>
     </main>
   );
-}
-
-const sectionHeading = { fontSize: 15, letterSpacing: 2, color: PLUM, textAlign: "center" };
-const primaryBtn = { padding: "12px 20px", background: "#fff", color: PLUM, borderRadius: 6, fontWeight: 600, letterSpacing: 1, fontSize: 13, textDecoration: "none" };
-const secondaryBtn = { padding: "12px 20px", background: "transparent", color: "#fff", border: "1px solid #FFFFFF66", borderRadius: 6, fontWeight: 600, letterSpacing: 1, fontSize: 13, textDecoration: "none" };
+  }
