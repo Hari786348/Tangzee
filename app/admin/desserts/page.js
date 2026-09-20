@@ -6,6 +6,8 @@ const PLUM = "#2F243A";
 export default function AdminDesserts() {
   const [desserts, setDesserts] = useState([]);
   const [form, setForm] = useState({ name: "", description: "", price: "", category: "", featured: false });
+  const [imageUrl, setImageUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
@@ -21,12 +23,27 @@ export default function AdminDesserts() {
     load();
   }, []);
 
+  async function uploadPhoto(file) {
+    setUploading(true);
+    setErr("");
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch("/api/desserts/upload-image", { method: "POST", body: formData });
+    const data = await res.json();
+    setUploading(false);
+    if (!res.ok) {
+      setErr(data.error);
+      return;
+    }
+    setImageUrl(data.url);
+  }
+
   async function createDessert() {
     setErr("");
     const res = await fetch("/api/desserts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, price: parseFloat(form.price) }),
+      body: JSON.stringify({ ...form, price: parseFloat(form.price), image_url: imageUrl || null }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -34,6 +51,7 @@ export default function AdminDesserts() {
       return;
     }
     setForm({ name: "", description: "", price: "", category: "", featured: false });
+    setImageUrl("");
     load();
   }
 
@@ -62,6 +80,17 @@ export default function AdminDesserts() {
 
         <section style={{ border: "1px solid #00000015", borderRadius: 10, padding: 16, marginBottom: 24 }}>
           <h3 style={{ marginTop: 0 }}>Add dessert</h3>
+
+          {imageUrl && (
+            <img src={imageUrl} alt="Dessert preview" style={{ width: "100%", borderRadius: 8, marginBottom: 12 }} />
+          )}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => e.target.files[0] && uploadPhoto(e.target.files[0])}
+          />
+          {uploading && <p style={{ fontSize: 13, color: "#666" }}>Uploading photo…</p>}
+
           <input placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={inputStyle} />
           <input placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} style={inputStyle} />
           <input placeholder="Price" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} style={inputStyle} />
@@ -78,9 +107,14 @@ export default function AdminDesserts() {
         ) : (
           desserts.map((d) => (
             <div key={d.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #00000010" }}>
-              <div>
-                <strong>{d.name}</strong> — ₹{d.price}
-                <div style={{ fontSize: 12, color: "#666" }}>{d.category} {d.featured ? "· ★ featured" : ""} · {d.available ? "available" : "archived"}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                {d.image_url && (
+                  <img src={d.image_url} alt={d.name} style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover" }} />
+                )}
+                <div>
+                  <strong>{d.name}</strong> — ₹{d.price}
+                  <div style={{ fontSize: 12, color: "#666" }}>{d.category} {d.featured ? "· ★ featured" : ""} · {d.available ? "available" : "archived"}</div>
+                </div>
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => toggleFeatured(d)} style={smallButtonStyle}>{d.featured ? "Unfeature" : "Feature"}</button>
