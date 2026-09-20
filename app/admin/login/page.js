@@ -19,7 +19,7 @@ export default function AdminLogin() {
       setError(error.message);
       return;
     }
-    router.push("/admin/counter");
+    router.push("/admin");
   }
 
   return (
