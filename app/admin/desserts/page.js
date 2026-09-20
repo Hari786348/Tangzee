@@ -73,6 +73,13 @@ export default function AdminDesserts() {
     load();
   }
 
+  async function deleteDessert(d) {
+    const sure = confirm(`Delete "${d.name}" permanently? This cannot be undone.`);
+    if (!sure) return;
+    await fetch(`/api/desserts/${d.id}`, { method: "DELETE" });
+    load();
+  }
+
   return (
     <main style={{ minHeight: "100vh", background: "#FFFFFF", padding: "24px 16px" }}>
       <div style={{ maxWidth: 560, margin: "0 auto" }}>
@@ -119,6 +126,7 @@ export default function AdminDesserts() {
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => toggleFeatured(d)} style={smallButtonStyle}>{d.featured ? "Unfeature" : "Feature"}</button>
                 <button onClick={() => toggleAvailable(d)} style={smallButtonStyle}>{d.available ? "Archive" : "Restore"}</button>
+                <button onClick={() => deleteDessert(d)} style={deleteButtonStyle}>Delete</button>
               </div>
             </div>
           ))
@@ -131,3 +139,4 @@ export default function AdminDesserts() {
 const inputStyle = { width: "100%", padding: 10, marginTop: 8, borderRadius: 6, border: "1px solid #00000030", boxSizing: "border-box" };
 const buttonStyle = { marginTop: 12, padding: 10, width: "100%", background: PLUM, color: "#fff", border: "none", borderRadius: 6, fontWeight: 600 };
 const smallButtonStyle = { padding: "6px 10px", border: "1px solid #00000030", background: "#fff", borderRadius: 6, fontSize: 12 };
+const deleteButtonStyle = { padding: "6px 10px", border: "1px solid crimson", background: "#fff", color: "crimson", borderRadius: 6, fontSize: 12 };
