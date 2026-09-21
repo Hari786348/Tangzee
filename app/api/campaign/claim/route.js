@@ -3,34 +3,31 @@ import { cookies } from "next/headers";
 import { supabaseAdmin } from "../../../../lib/supabaseServer";
 import { verifySession } from "../../../../lib/otpSession";
 
-// POST { phone: "+919876543210", campaignCode: "TZ001", photoUrl?: string }
+// POST { email: "someone@example.com", campaignCode: "TZ001", photoUrl?: string }
 // Public route (no login) — but requires an OTP-verified session cookie
-// for this exact phone (see /api/otp/verify), so a claim can't be
-// created for a phone number someone doesn't actually own. Every other
-// rule (active, date window, one-claim-per-customer) is enforced inside
-// the claim_campaign() SQL function.
+// for this exact email (see /api/otp/verify), so a claim can't be
+// created for an email someone doesn't actually own. Every other rule
+// (active, date window, one-claim-per-customer) is enforced inside the
+// claim_campaign() SQL function.
 export async function POST(req) {
-  const { phone, campaignCode, photoUrl } = await req.json();
+  const { email, campaignCode, photoUrl } = await req.json();
 
-  if (!phone || !campaignCode) {
-    return NextResponse.json({ error: "PHONE_AND_CAMPAIGN_REQUIRED" }, { status: 400 });
+  if (!email || !campaignCode) {
+    return NextResponse.json({ error: "EMAIL_AND_CAMPAIGN_REQUIRED" }, { status: 400 });
   }
 
   const sessionToken = cookies().get("tangzee_session")?.value;
-  if (!verifySession(sessionToken, phone)) {
-    return NextResponse.json({ error: "PHONE_NOT_VERIFIED" }, { status: 401 });
+  if (!verifySession(sessionToken, email)) {
+    return NextResponse.json({ error: "EMAIL_NOT_VERIFIED" }, { status: 401 });
   }
 
   const db = supabaseAdmin();
 
-  // Find or create the customer by phone.
-  // NOTE: real OTP verification should happen before this call — see
-  // README "Phone verification" section for provider options.
-  let { data: customer } = await db.from("customers").select("*").eq("phone", phone).single();
+  let { data: customer } = await db.from("customers").select("*").eq("email", email).single();
   if (!customer) {
     const { data: created, error: createErr } = await db
       .from("customers")
-      .insert({ phone })
+      .insert({ email })
       .select()
       .single();
     if (createErr) {
@@ -46,10 +43,8 @@ export async function POST(req) {
   });
 
   if (error) {
-    // error.message carries the exact RAISE EXCEPTION reason, e.g.
-    // ALREADY_CLAIMED, CAMPAIGN_NOT_ACTIVE, CAMPAIGN_EXPIRED
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
   return NextResponse.json({ claim });
-}
+      }
