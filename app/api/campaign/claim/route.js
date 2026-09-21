@@ -17,7 +17,9 @@ export async function POST(req) {
   }
 
   const sessionToken = cookies().get("tangzee_session")?.value;
-  if (!verifySession(sessionToken, email)) {
+  const verifiedEmail = verifySession(sessionToken, email);
+  console.log("DEBUG claim:", { hasToken: !!sessionToken, tokenPreview: sessionToken?.slice(0, 20), inputEmail: email, verifiedEmail });
+  if (!verifiedEmail) {
     return NextResponse.json({ error: "EMAIL_NOT_VERIFIED" }, { status: 401 });
   }
 
@@ -29,22 +31,3 @@ export async function POST(req) {
       .from("customers")
       .insert({ email })
       .select()
-      .single();
-    if (createErr) {
-      return NextResponse.json({ error: "CUSTOMER_CREATE_FAILED" }, { status: 500 });
-    }
-    customer = created;
-  }
-
-  const { data: claim, error } = await db.rpc("claim_campaign", {
-    p_customer_id: customer.id,
-    p_campaign_code: campaignCode,
-    p_photo_url: photoUrl ?? null,
-  });
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
-
-  return NextResponse.json({ claim });
-      }
