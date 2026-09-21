@@ -6,8 +6,8 @@ const PLUM = "#2F243A";
 
 export default function CampaignPage() {
   const { code } = useParams();
-  const [phone, setPhone] = useState("");
-  const [otpStage, setOtpStage] = useState("enter-phone"); // enter-phone | enter-code | verified
+  const [email, setEmail] = useState("");
+  const [otpStage, setOtpStage] = useState("enter-email"); // enter-email | enter-code | verified
   const [otpCode, setOtpCode] = useState("");
   const [status, setStatus] = useState("idle"); // idle | loading | claimed | error
   const [result, setResult] = useState(null);
@@ -19,12 +19,12 @@ export default function CampaignPage() {
     const res = await fetch("/api/otp/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone }),
+      body: JSON.stringify({ email }),
     });
     const data = await res.json();
     setStatus("idle");
     if (!res.ok) {
-      setErrorMsg(data.error || "Couldn't send the code. Check the number and try again.");
+      setErrorMsg(data.error || "Couldn't send the code. Check the email and try again.");
       return;
     }
     setOtpStage("enter-code");
@@ -36,7 +36,7 @@ export default function CampaignPage() {
     const res = await fetch("/api/otp/verify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone, code: otpCode }),
+      body: JSON.stringify({ email, code: otpCode }),
     });
     const data = await res.json();
     setStatus("idle");
@@ -54,7 +54,7 @@ export default function CampaignPage() {
       const res = await fetch("/api/campaign/claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, campaignCode: code }),
+        body: JSON.stringify({ email, campaignCode: code }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -77,17 +77,17 @@ export default function CampaignPage() {
         <h2 style={{ fontWeight: 400, opacity: 0.9, marginTop: 0 }}>ONLY 1 DIFFERENCE</h2>
         <p style={{ letterSpacing: 1, opacity: 0.8 }}>FIND IT. CIRCLE IT. BRING IT.</p>
 
-        {status !== "claimed" && otpStage === "enter-phone" && (
+        {status !== "claimed" && otpStage === "enter-email" && (
           <div style={{ marginTop: 32 }}>
             <p style={{ fontSize: 18, marginBottom: 16 }}>FOUND THE DIFFERENCE?</p>
             <input
-              type="tel"
-              placeholder="+91 phone number"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              type="email"
+              placeholder="your@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               style={inputStyle}
             />
-            <button onClick={sendOtp} disabled={status === "loading" || !phone} style={buttonStyle}>
+            <button onClick={sendOtp} disabled={status === "loading" || !email} style={buttonStyle}>
               {status === "loading" ? "SENDING…" : "SEND CODE"}
             </button>
             {errorMsg && <p style={errorStyle}>{errorMsg}</p>}
@@ -96,7 +96,7 @@ export default function CampaignPage() {
 
         {status !== "claimed" && otpStage === "enter-code" && (
           <div style={{ marginTop: 32 }}>
-            <p style={{ fontSize: 15, marginBottom: 16 }}>Enter the code we texted to {phone}</p>
+            <p style={{ fontSize: 15, marginBottom: 16 }}>Enter the code we emailed to {email}</p>
             <input
               type="text"
               placeholder="6-digit code"
@@ -142,7 +142,7 @@ function humanizeError(code) {
     CAMPAIGN_EXPIRED: "This campaign has ended.",
     CAMPAIGN_NOT_STARTED: "This campaign hasn't started yet.",
     CAMPAIGN_NOT_FOUND: "We couldn't find that campaign.",
-    PHONE_NOT_VERIFIED: "Please verify your phone number again.",
+    EMAIL_NOT_VERIFIED: "Please verify your email again.",
   };
   return map[code] || "Something went wrong. Please try again.";
 }
