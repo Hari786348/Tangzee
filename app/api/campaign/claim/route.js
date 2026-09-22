@@ -31,3 +31,22 @@ export async function POST(req) {
       .from("customers")
       .insert({ email })
       .select()
+      .single();
+    if (createErr) {
+      return NextResponse.json({ error: "CUSTOMER_CREATE_FAILED" }, { status: 500 });
+    }
+    customer = created;
+  }
+
+  const { data: claim, error } = await db.rpc("claim_campaign", {
+    p_customer_id: customer.id,
+    p_campaign_code: campaignCode,
+    p_photo_url: photoUrl ?? null,
+  });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  return NextResponse.json({ claim });
+}
