@@ -38,19 +38,28 @@ export default async function DessertsPage() {
                     borderRadius: 10,
                     padding: 16,
                     display: "flex",
-                    justifyContent: "space-between",
+                    gap: 14,
                     alignItems: "center",
                   }}
                 >
-                  <div>
-                    <p style={{ margin: 0, fontWeight: 600 }}>
-                      {d.name} {d.featured && <span style={{ color: PLUM, fontSize: 12 }}>★ FEATURED</span>}
-                    </p>
-                    {d.description && (
-                      <p style={{ margin: "4px 0 0", fontSize: 13, color: "#666" }}>{d.description}</p>
-                    )}
+                  {d.image_url && (
+                    <img
+                      src={d.image_url}
+                      alt={d.name}
+                      style={{ width: 64, height: 64, borderRadius: 8, objectFit: "cover", flexShrink: 0 }}
+                    />
+                  )}
+                  <div style={{ flex: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <p style={{ margin: 0, fontWeight: 600 }}>
+                        {d.name} {d.featured && <span style={{ color: PLUM, fontSize: 12 }}>★ FEATURED</span>}
+                      </p>
+                      {d.description && (
+                        <p style={{ margin: "4px 0 0", fontSize: 13, color: "#666" }}>{d.description}</p>
+                      )}
+                    </div>
+                    <p style={{ margin: 0, fontWeight: 700, color: PLUM }}>₹{d.price}</p>
                   </div>
-                  <p style={{ margin: 0, fontWeight: 700, color: PLUM }}>₹{d.price}</p>
                 </div>
               ))}
             </div>
@@ -63,4 +72,4 @@ export default async function DessertsPage() {
       </div>
     </main>
   );
-}
+       }
