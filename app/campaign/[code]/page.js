@@ -1,8 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useParams } from "next/navigation";
 
 const PLUM = "#2F243A";
+const CANVAS_SIZE = 320;
 
 export default function CampaignPage() {
   const { code } = useParams();
@@ -12,6 +13,68 @@ export default function CampaignPage() {
   const [status, setStatus] = useState("idle"); // idle | loading | claimed | error
   const [result, setResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Photo + circle step — purely for fun/engagement. Nothing here is
+  // ever uploaded, saved, or checked — it never leaves the browser.
+  const [photoReady, setPhotoReady] = useState(false);
+  const canvasRef = useRef(null);
+  const drawingRef = useRef(false);
+
+  function handlePhotoSelect(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const img = new Image();
+    img.onload = () => {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+      const scale = Math.min(CANVAS_SIZE / img.width, CANVAS_SIZE / img.height);
+      const w = img.width * scale;
+      const h = img.height * scale;
+      ctx.drawImage(img, (CANVAS_SIZE - w) / 2, (CANVAS_SIZE - h) / 2, w, h);
+      setPhotoReady(true);
+    };
+    img.src = URL.createObjectURL(file);
+  }
+
+  function pointerPos(e, canvas) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  }
+
+  function startDraw(e) {
+    drawingRef.current = true;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const { x, y } = pointerPos(e, canvas);
+    ctx.strokeStyle = "#D8B36A";
+    ctx.lineWidth = 4;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  }
+
+  function moveDraw(e) {
+    if (!drawingRef.current) return;
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const { x, y } = pointerPos(e, canvas);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  }
+
+  function endDraw() {
+    drawingRef.current = false;
+  }
+
+  function retakePhoto() {
+    setPhotoReady(false);
+    const canvas = canvasRef.current;
+    canvas?.getContext("2d").clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+  }
 
   async function sendOtp() {
     setErrorMsg("");
@@ -111,11 +174,37 @@ export default function CampaignPage() {
           </div>
         )}
 
-        {status !== "claimed" && otpStage === "verified" && (
+        {status !== "claimed" && otpStage === "verified" && !photoReady && (
           <div style={{ marginTop: 32 }}>
-            <button onClick={handleClaim} disabled={status === "loading"} style={buttonStyle}>
-              {status === "loading" ? "CLAIMING..." : "CLAIM YOUR TANGZEE"}
-            </button>
+            <p style={{ fontSize: 15, marginBottom: 16 }}>Take a photo of the poster you found</p>
+            <label style={{ ...buttonStyle, display: "block", cursor: "pointer" }}>
+              TAKE / CHOOSE PHOTO
+              <input type="file" accept="image/*" capture="environment" onChange={handlePhotoSelect} style={{ display: "none" }} />
+            </label>
+          </div>
+        )}
+
+        {status !== "claimed" && otpStage === "verified" && photoReady && (
+          <div style={{ marginTop: 24 }}>
+            <p style={{ fontSize: 15, marginBottom: 12 }}>Circle the difference you found</p>
+            <canvas
+              ref={canvasRef}
+              width={CANVAS_SIZE}
+              height={CANVAS_SIZE}
+              style={{ width: CANVAS_SIZE, height: CANVAS_SIZE, borderRadius: 8, border: "1px solid #FFFFFF44", touchAction: "none", background: "#00000022" }}
+              onPointerDown={startDraw}
+              onPointerMove={moveDraw}
+              onPointerUp={endDraw}
+              onPointerLeave={endDraw}
+            />
+            <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+              <button onClick={retakePhoto} style={{ ...buttonStyle, marginTop: 0, background: "transparent", color: "#fff", border: "1px solid #FFFFFF66" }}>
+                RETAKE
+              </button>
+              <button onClick={handleClaim} disabled={status === "loading"} style={{ ...buttonStyle, marginTop: 0 }}>
+                {status === "loading" ? "CLAIMING..." : "SUBMIT & CLAIM"}
+              </button>
+            </div>
             {status === "error" && <p style={errorStyle}>{errorMsg}</p>}
           </div>
         )}
@@ -170,4 +259,3 @@ const buttonStyle = {
   fontSize: 16,
 };
 const errorStyle = { color: "#FFB4B4", marginTop: 12 };
-          
