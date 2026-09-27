@@ -19,6 +19,7 @@ export default function CampaignPage() {
   const [photoReady, setPhotoReady] = useState(false);
   const canvasRef = useRef(null);
   const drawingRef = useRef(false);
+  const fileInputRef = useRef(null);
 
   function handlePhotoSelect(e) {
     const file = e.target.files?.[0];
@@ -189,10 +190,19 @@ export default function CampaignPage() {
         {status !== "claimed" && otpStage === "verified" && !photoReady && (
           <div style={{ marginTop: 32 }}>
             <p style={{ fontSize: 15, marginBottom: 16 }}>Take a photo of the poster you found</p>
-            <label style={{ ...buttonStyle, display: "block", cursor: "pointer" }}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoSelect}
+              style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
+            />
+            <button type="button" onClick={() => fileInputRef.current && fileInputRef.current.click()} style={buttonStyle}>
               TAKE / CHOOSE PHOTO
-              <input type="file" accept="image/*" onChange={handlePhotoSelect} style={{ display: "none" }} />
-            </label>
+            </button>
+            <button type="button" onClick={() => setPhotoReady(true)} style={{ ...buttonStyle, background: "transparent", color: "#FFFFFFAA", border: "none", marginTop: 10, textDecoration: "underline", fontWeight: 400 }}>
+              Camera not working? Skip this step
+            </button>
           </div>
         )}
 
