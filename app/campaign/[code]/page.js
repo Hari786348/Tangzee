@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useParams } from "next/navigation";
 
 const PLUM = "#2F243A";
@@ -20,6 +20,7 @@ export default function CampaignPage() {
   const canvasRef = useRef(null);
   const drawingRef = useRef(false);
   const fileInputRef = useRef(null);
+  const pendingPhotoSrc = useRef(null); // holds the picked photo until the canvas actually mounts
 
   function handlePhotoSelect(e) {
     const file = e.target.files?.[0];
@@ -30,25 +31,33 @@ export default function CampaignPage() {
       alert("Couldn't read that photo — please try picking it again.");
     };
     reader.onload = () => {
-      const img = new Image();
-      img.onerror = () => {
-        alert("Couldn't open that photo — please try a different one.");
-      };
-      img.onload = () => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext("2d");
-        ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-        const scale = Math.min(CANVAS_SIZE / img.width, CANVAS_SIZE / img.height);
-        const w = img.width * scale;
-        const h = img.height * scale;
-        ctx.drawImage(img, (CANVAS_SIZE - w) / 2, (CANVAS_SIZE - h) / 2, w, h);
-        setPhotoReady(true);
-      };
-      img.src = reader.result;
+      pendingPhotoSrc.current = reader.result;
+      setPhotoReady(true); // mounts the <canvas>; the effect below draws once it exists
     };
     reader.readAsDataURL(file);
   }
+
+  // Draws the picked photo onto the canvas AFTER it has mounted (the
+  // canvas only exists in the DOM once photoReady is true, so drawing
+  // to it earlier silently does nothing — this effect runs post-mount).
+  useEffect(() => {
+    if (!photoReady || !pendingPhotoSrc.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const img = new Image();
+    img.onerror = () => {
+      alert("Couldn't open that photo — please try a different one.");
+    };
+    img.onload = () => {
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+      const scale = Math.min(CANVAS_SIZE / img.width, CANVAS_SIZE / img.height);
+      const w = img.width * scale;
+      const h = img.height * scale;
+      ctx.drawImage(img, (CANVAS_SIZE - w) / 2, (CANVAS_SIZE - h) / 2, w, h);
+    };
+    img.src = pendingPhotoSrc.current;
+  }, [photoReady]);
 
   function pointerPos(e, canvas) {
     const rect = canvas.getBoundingClientRect();
@@ -84,6 +93,7 @@ export default function CampaignPage() {
   }
 
   function retakePhoto() {
+    pendingPhotoSrc.current = null;
     setPhotoReady(false);
     const canvas = canvasRef.current;
     canvas?.getContext("2d").clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
