@@ -208,10 +208,7 @@ export default function CampaignPage() {
               style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
             />
             <button type="button" onClick={() => fileInputRef.current && fileInputRef.current.click()} style={buttonStyle}>
-              TAKE / CHOOSE PHOTO
-            </button>
-            <button type="button" onClick={() => setPhotoReady(true)} style={{ ...buttonStyle, background: "transparent", color: "#FFFFFFAA", border: "none", marginTop: 10, textDecoration: "underline", fontWeight: 400 }}>
-              Camera not working? Skip this step
+              CHOOSE PHOTO
             </button>
           </div>
         )}
