@@ -23,18 +23,30 @@ export default function CampaignPage() {
   function handlePhotoSelect(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const img = new Image();
-    img.onload = () => {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext("2d");
-      ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-      const scale = Math.min(CANVAS_SIZE / img.width, CANVAS_SIZE / img.height);
-      const w = img.width * scale;
-      const h = img.height * scale;
-      ctx.drawImage(img, (CANVAS_SIZE - w) / 2, (CANVAS_SIZE - h) / 2, w, h);
-      setPhotoReady(true);
+
+    const reader = new FileReader();
+    reader.onerror = () => {
+      alert("Couldn't read that photo — please try picking it again.");
     };
-    img.src = URL.createObjectURL(file);
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => {
+        alert("Couldn't open that photo — please try a different one.");
+      };
+      img.onload = () => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+        const scale = Math.min(CANVAS_SIZE / img.width, CANVAS_SIZE / img.height);
+        const w = img.width * scale;
+        const h = img.height * scale;
+        ctx.drawImage(img, (CANVAS_SIZE - w) / 2, (CANVAS_SIZE - h) / 2, w, h);
+        setPhotoReady(true);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
   }
 
   function pointerPos(e, canvas) {
@@ -179,7 +191,7 @@ export default function CampaignPage() {
             <p style={{ fontSize: 15, marginBottom: 16 }}>Take a photo of the poster you found</p>
             <label style={{ ...buttonStyle, display: "block", cursor: "pointer" }}>
               TAKE / CHOOSE PHOTO
-              <input type="file" accept="image/*" capture="environment" onChange={handlePhotoSelect} style={{ display: "none" }} />
+              <input type="file" accept="image/*" onChange={handlePhotoSelect} style={{ display: "none" }} />
             </label>
           </div>
         )}
