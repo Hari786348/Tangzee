@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../lib/supabaseServer";
-import { signSession } from "../../../../lib/otpSession";
+import { signSession, SESSION_MAX_AGE_SECONDS } from "../../../../lib/otpSession";
 
 // POST { email: "someone@example.com", code: "123456" }
 // Public. Checks the code against otp_codes, and if valid, sets a
@@ -44,8 +44,8 @@ export async function POST(req) {
     httpOnly: true,
     secure: true,
     sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 30,
+    maxAge: SESSION_MAX_AGE_SECONDS,
     path: "/",
   });
   return res;
-}
+    }
