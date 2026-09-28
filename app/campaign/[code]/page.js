@@ -8,7 +8,7 @@ const CANVAS_SIZE = 320;
 export default function CampaignPage() {
   const { code } = useParams();
   const [email, setEmail] = useState("");
-  const [otpStage, setOtpStage] = useState("enter-email"); // enter-email | enter-code | verified
+  const [otpStage, setOtpStage] = useState("checking"); // checking | enter-email | enter-code | verified
   const [otpCode, setOtpCode] = useState("");
   const [status, setStatus] = useState("idle"); // idle | loading | claimed | error
   const [result, setResult] = useState(null);
@@ -21,6 +21,22 @@ export default function CampaignPage() {
   const drawingRef = useRef(false);
   const fileInputRef = useRef(null);
   const pendingPhotoSrc = useRef(null); // holds the picked photo until the canvas actually mounts
+
+  // If this browser already verified an email before (any page, any
+  // campaign), skip email + OTP entirely and go straight to the photo step.
+  useEffect(() => {
+    fetch("/api/otp/session")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.email) {
+          setEmail(d.email);
+          setOtpStage("verified");
+        } else {
+          setOtpStage("enter-email");
+        }
+      })
+      .catch(() => setOtpStage("enter-email"));
+  }, []);
 
   function handlePhotoSelect(e) {
     const file = e.target.files?.[0];
@@ -162,6 +178,8 @@ export default function CampaignPage() {
         <h1 style={{ fontSize: 28, letterSpacing: 2, marginBottom: 4 }}>TANGZEE</h1>
         <h2 style={{ fontWeight: 400, opacity: 0.9, marginTop: 0 }}>ONLY 1 DIFFERENCE</h2>
         <p style={{ letterSpacing: 1, opacity: 0.8 }}>FIND IT. CIRCLE IT. BRING IT.</p>
+
+        {otpStage === "checking" && <p style={{ marginTop: 32, opacity: 0.7 }}>Loading…</p>}
 
         {status !== "claimed" && otpStage === "enter-email" && (
           <div style={{ marginTop: 32 }}>
