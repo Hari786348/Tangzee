@@ -11,6 +11,7 @@ const ownerTiles = [
   { href: "/admin/campaigns", label: "CAMPAIGNS & QR", desc: "Create posters, generate QR codes" },
   { href: "/admin/analytics", label: "ANALYTICS", desc: "See how the shop is doing" },
   { href: "/admin/audit-logs", label: "ACTIVITY LOG", desc: "See recent staff actions" },
+  { href: "/admin/staff", label: "STAFF ACCOUNTS", desc: "Add staff, change their email or password" },
 ];
 
 const staffTiles = [
