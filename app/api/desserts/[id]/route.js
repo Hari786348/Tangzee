@@ -10,6 +10,7 @@ export async function PATCH(req, { params }) {
   if (authError) return NextResponse.json({ error: authError }, { status: 401 });
 
   const updates = await req.json();
+  if (typeof updates.category === "string") updates.category = updates.category.trim();
   updates.updated_at = new Date().toISOString();
 
   const db = supabaseAdmin();
