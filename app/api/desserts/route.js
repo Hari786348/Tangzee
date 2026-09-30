@@ -33,7 +33,7 @@ export async function POST(req) {
       description: description ?? null,
       price,
       image_url: image_url ?? null,
-      category: category ?? null,
+      category: category ? category.trim() : null,
       available: available ?? true,
       featured: featured ?? false,
     })
