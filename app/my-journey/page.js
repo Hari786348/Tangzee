@@ -1,15 +1,41 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const PLUM = "#2F243A";
 
 export default function MyJourney() {
   const [email, setEmail] = useState("");
-  const [otpStage, setOtpStage] = useState("enter-email"); // enter-email | enter-code | verified
+  const [otpStage, setOtpStage] = useState("checking"); // checking | enter-email | enter-code | verified
   const [otpCode, setOtpCode] = useState("");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // On load, check whether this browser already verified an email
+  // before (e.g. while claiming a campaign, or a past visit here) —
+  // if so, skip straight to their journey with no email/OTP at all.
+  useEffect(() => {
+    fetch("/api/otp/session")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.email) {
+          setEmail(d.email);
+          setOtpStage("verified");
+          lookupFor(d.email);
+        } else {
+          setOtpStage("enter-email");
+        }
+      })
+      .catch(() => setOtpStage("enter-email"));
+  }, []);
+
+  async function lookupFor(emailToLookup) {
+    setLoading(true);
+    const res = await fetch(`/api/my-journey?email=${encodeURIComponent(emailToLookup)}`);
+    const d = await res.json();
+    setData(d);
+    setLoading(false);
+  }
 
   async function sendOtp() {
     setErrorMsg("");
@@ -60,6 +86,8 @@ export default function MyJourney() {
     <main style={{ minHeight: "100vh", background: PLUM, color: "#fff", padding: "32px 20px" }}>
       <div style={{ maxWidth: 420, margin: "0 auto" }}>
         <h1 style={{ letterSpacing: 2, fontSize: 24 }}>TANGZEE</h1>
+
+        {otpStage === "checking" && <p style={{ marginTop: 24, opacity: 0.7 }}>Loading…</p>}
 
         {otpStage === "enter-email" && (
           <div style={{ marginTop: 24 }}>
@@ -170,4 +198,3 @@ const rowStyle = { display: "flex", justifyContent: "space-between", fontSize: 1
 const billStyle = { border: "1px solid #FFFFFF33", borderRadius: 8, padding: 12, marginBottom: 10 };
 const inputStyle = { width: "100%", padding: 14, borderRadius: 6, border: "1px solid #FFFFFF66", background: "transparent", color: "#fff", boxSizing: "border-box" };
 const buttonStyle = { marginTop: 12, width: "100%", padding: 14, borderRadius: 6, border: "none", background: "#fff", color: PLUM, fontWeight: 600 };
-          
