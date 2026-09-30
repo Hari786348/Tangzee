@@ -75,9 +75,6 @@ export default function CounterMode() {
 
   async function verifyClaim() {
     setMsg("");
-    // Reuse redeem endpoint's error to also "verify": we look it up via
-    // available claims list already fetched per-customer; here we just
-    // redeem directly since staff confirms visually first.
     const res = await fetch("/api/campaign/redeem", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -156,9 +153,12 @@ export default function CounterMode() {
                   <p style={{ fontSize: 13, fontWeight: 600 }}>Pending orders:</p>
                   {customerData.recentOrders.filter((o) => o.status === "PENDING").map((o) => (
                     <div key={o.id} style={{ border: "1px solid #00000015", borderRadius: 8, padding: 10, marginTop: 6 }}>
-                      <p style={{ margin: "0 0 6px", fontSize: 12, color: "#888" }}>{o.order_number}</p>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#888" }}>
+                        <span>{o.order_number}</span>
+                        <span>{formatDateTime(o.created_at)}</span>
+                      </div>
                       {(o.order_items || []).map((it) => (
-                        <div key={it.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, padding: "2px 0" }}>
+                        <div key={it.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, padding: "2px 0", marginTop: 4 }}>
                           <span>{it.desserts?.name || "Item"} × {it.quantity}</span>
                           <span>₹{it.price_at_purchase * it.quantity}</span>
                         </div>
@@ -166,6 +166,30 @@ export default function CounterMode() {
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6, paddingTop: 6, borderTop: "1px solid #00000015" }}>
                         <span style={{ fontWeight: 700, fontSize: 13 }}>Total ₹{o.total_amount}</span>
                         <button onClick={() => completeOrder(o.id)} style={smallButtonStyle}>MARK COMPLETED</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {customerData.recentOrders?.some((o) => o.status === "COMPLETED") && (
+                <div style={{ marginTop: 8 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600 }}>Recent orders:</p>
+                  {customerData.recentOrders.filter((o) => o.status === "COMPLETED").map((o) => (
+                    <div key={o.id} style={{ border: "1px solid #00000015", borderRadius: 8, padding: 10, marginTop: 6 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#888" }}>
+                        <span>{o.order_number}</span>
+                        <span>{formatDateTime(o.completed_at || o.created_at)}</span>
+                      </div>
+                      {(o.order_items || []).map((it) => (
+                        <div key={it.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, padding: "2px 0", marginTop: 4 }}>
+                          <span>{it.desserts?.name || "Item"} × {it.quantity}</span>
+                          <span>₹{it.price_at_purchase * it.quantity}</span>
+                        </div>
+                      ))}
+                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, paddingTop: 6, borderTop: "1px solid #00000015" }}>
+                        <span style={{ fontWeight: 700, fontSize: 13 }}>Total ₹{o.total_amount}</span>
+                        <span style={{ fontSize: 11, color: "#888" }}>COMPLETED</span>
                       </div>
                     </div>
                   ))}
@@ -228,9 +252,14 @@ export default function CounterMode() {
   );
 }
 
+function formatDateTime(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return `${d.toLocaleDateString()} · ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+}
+
 const cardStyle = { background: "#fff", border: "1px solid #00000012", borderRadius: 10, padding: 16, marginTop: 16 };
 const h3Style = { marginTop: 0, fontSize: 14, letterSpacing: 1, textTransform: "uppercase", color: "#666" };
 const inputStyle = { width: "100%", padding: 10, marginTop: 8, borderRadius: 6, border: "1px solid #00000030", boxSizing: "border-box" };
 const buttonStyle = { marginTop: 12, padding: 10, width: "100%", background: PLUM, color: "#fff", border: "none", borderRadius: 6, fontWeight: 600 };
 const smallButtonStyle = { padding: "6px 10px", border: "1px solid #00000030", background: "#fff", borderRadius: 6, fontSize: 12, cursor: "pointer" };
-            
