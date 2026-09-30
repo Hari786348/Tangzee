@@ -14,9 +14,10 @@ export default async function DessertsPage() {
 
   const byCategory = {};
   for (const d of desserts || []) {
-    const cat = d.category || "Signature";
-    byCategory[cat] = byCategory[cat] || [];
-    byCategory[cat].push(d);
+    const rawCat = (d.category || "Signature").trim() || "Signature";
+    const key = rawCat.toLowerCase();
+    if (!byCategory[key]) byCategory[key] = { label: rawCat, items: [] };
+    byCategory[key].items.push(d);
   }
 
   return (
@@ -24,10 +25,10 @@ export default async function DessertsPage() {
       <div style={{ maxWidth: 640, margin: "0 auto" }}>
         <h1 style={{ color: PLUM, letterSpacing: 2 }}>TANGZEE DESSERTS</h1>
 
-        {Object.entries(byCategory).map(([category, items]) => (
-          <section key={category} style={{ marginTop: 32 }}>
+        {Object.entries(byCategory).map(([key, { label, items }]) => (
+          <section key={key} style={{ marginTop: 32 }}>
             <h2 style={{ color: "#000", fontSize: 16, letterSpacing: 1, textTransform: "uppercase" }}>
-              {category}
+              {label}
             </h2>
             <div style={{ display: "grid", gap: 16, marginTop: 12 }}>
               {items.map((d) => (
@@ -72,4 +73,4 @@ export default async function DessertsPage() {
       </div>
     </main>
   );
-}
+          }
