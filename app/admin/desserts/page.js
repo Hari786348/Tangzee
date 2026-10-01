@@ -82,7 +82,20 @@ export default function AdminDesserts() {
   async function deleteDessert(d) {
     const sure = confirm(`Delete "${d.name}" permanently? This cannot be undone.`);
     if (!sure) return;
-    await fetch(`/api/desserts/${d.id}`, { method: "DELETE" });
+    setErr("");
+    const res = await fetch(`/api/desserts/${d.id}`, { method: "DELETE" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (data.error === "HAS_ORDER_HISTORY") {
+        const archiveInstead = confirm(
+          `"${d.name}" has already been ordered ${data.orderCount} time(s), so it can't be deleted (it would break those past bills).\n\nArchive it instead? This hides it from the menu right away.`
+        );
+        if (archiveInstead) await toggleAvailable(d);
+      } else {
+        setErr(data.error || "Couldn't delete this item.");
+      }
+      return;
+    }
     load();
   }
 
@@ -117,6 +130,8 @@ export default function AdminDesserts() {
         </section>
         )}
 
+        {err && <p style={{ color: "crimson", marginBottom: 12 }}>{err}</p>}
+
         {loading ? (
           <p>Loading…</p>
         ) : (
@@ -148,4 +163,3 @@ const inputStyle = { width: "100%", padding: 10, marginTop: 8, borderRadius: 6, 
 const buttonStyle = { marginTop: 12, padding: 10, width: "100%", background: PLUM, color: "#fff", border: "none", borderRadius: 6, fontWeight: 600 };
 const smallButtonStyle = { padding: "6px 10px", border: "1px solid #00000030", background: "#fff", borderRadius: 6, fontSize: 12 };
 const deleteButtonStyle = { padding: "6px 10px", border: "1px solid crimson", background: "#fff", color: "crimson", borderRadius: 6, fontSize: 12 };
-          
