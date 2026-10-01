@@ -151,7 +151,7 @@ export default function MyJourney() {
                 {data.miniDesserts.map((m) => (
                   <div key={m.id} style={rowStyle}>
                     <span>Cycle {m.cycle_number} — {m.desserts?.name || "Mini dessert"}</span>
-                    <span>{new Date(o.created_at).toLocaleDateString()} · {new Date(o.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                    <span>{new Date(m.created_at).toLocaleDateString()} · {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                   </div>
                 ))}
               </section>
