@@ -8,7 +8,19 @@ function currentMonthStr() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
+function shiftMonth(monthStr, delta) {
+  const [y, m] = monthStr.split("-").map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function monthLabel(monthStr) {
+  const [y, m] = monthStr.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+}
+
 export default function AdminAnalytics() {
+  const [month, setMonth] = useState(currentMonthStr());
   const [stats, setStats] = useState(null);
   const [todayCost, setTodayCost] = useState("");
   const [salaryInput, setSalaryInput] = useState("");
@@ -16,15 +28,15 @@ export default function AdminAnalytics() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
 
-  function load() {
-    fetch("/api/analytics").then((r) => r.json()).then((d) => {
+  function load(m) {
+    fetch(`/api/analytics?month=${m}`).then((r) => r.json()).then((d) => {
       setStats(d);
-      setSalaryInput(d.profit?.staffSalary || "");
-      setElecInput(d.profit?.electricityBill || "");
+      setSalaryInput(d.month?.staffSalary || "");
+      setElecInput(d.month?.electricityBill || "");
     });
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(month); }, [month]);
 
   async function logRawMaterial() {
     if (!todayCost) return;
@@ -36,7 +48,7 @@ export default function AdminAnalytics() {
       body: JSON.stringify({ date: new Date().toISOString().slice(0, 10), amount: todayCost }),
     });
     setSaving(false);
-    if (res.ok) { setTodayCost(""); setMsg("Raw material cost added."); load(); }
+    if (res.ok) { setTodayCost(""); setMsg("Raw material cost added."); load(month); }
     else setMsg("Couldn't save — try again.");
   }
 
@@ -46,16 +58,19 @@ export default function AdminAnalytics() {
     const res = await fetch("/api/expenses", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ month: currentMonthStr(), staffSalary: salaryInput, electricityBill: elecInput }),
+      body: JSON.stringify({ month, staffSalary: salaryInput, electricityBill: elecInput }),
     });
     setSaving(false);
-    if (res.ok) { setMsg("Monthly costs saved."); load(); }
+    if (res.ok) { setMsg("Monthly costs saved."); load(month); }
     else setMsg("Couldn't save — try again.");
   }
 
   if (!stats) return <main style={{ padding: 24 }}>Loading…</main>;
 
-  const tiles = [
+  const isCurrentMonth = month === stats.currentMonth;
+  const m = stats.month;
+
+  const liveTiles = [
     ["Total customers", stats.totalCustomers],
     ["Today's orders", stats.todaysOrders],
     ["This week's orders", stats.weekOrders],
@@ -72,36 +87,95 @@ export default function AdminAnalytics() {
       <div style={{ maxWidth: 560, margin: "0 auto" }}>
         <h1 style={{ color: PLUM, letterSpacing: 1 }}>ANALYTICS</h1>
 
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16, background: "#fff", border: "1px solid #00000012", borderRadius: 10, padding: 12 }}>
+          <button onClick={() => setMonth(shiftMonth(month, -1))} style={navBtnStyle}>←</button>
+          <strong style={{ color: PLUM }}>{monthLabel(month)}{isCurrentMonth ? " (current)" : ""}</strong>
+          <button onClick={() => setMonth(shiftMonth(month, 1))} disabled={isCurrentMonth} style={{ ...navBtnStyle, opacity: isCurrentMonth ? 0.3 : 1 }}>→</button>
+        </div>
+
         <section style={cardStyle}>
-          <h3 style={cardHeading}>Profit this month</h3>
-          <div style={rowStyle}><span>Revenue</span><span>₹{stats.profit.monthRevenue}</span></div>
-          <div style={rowStyle}><span>− Raw material cost</span><span>₹{stats.profit.rawMaterialTotal}</span></div>
-          <div style={rowStyle}><span>− Staff salary</span><span>₹{stats.profit.staffSalary}</span></div>
-          <div style={rowStyle}><span>− Electricity bill</span><span>₹{stats.profit.electricityBill}</span></div>
+          <h3 style={cardHeading}>Profit — {monthLabel(month)}</h3>
+          <div style={rowStyle}>
+            <span>Revenue</span>
+            <span>
+              ₹{m.revenue}
+              {isCurrentMonth && stats.revenueChangePct !== null && (
+                <span style={{ fontSize: 11, marginLeft: 6, color: stats.revenueChangePct >= 0 ? "#1a7a3c" : "crimson" }}>
+                  ({stats.revenueChangePct >= 0 ? "+" : ""}{stats.revenueChangePct}% vs last month)
+                </span>
+              )}
+            </span>
+          </div>
+          <div style={rowStyle}><span>Orders</span><span>{m.ordersCount}</span></div>
+          <div style={rowStyle}><span>Avg order value</span><span>₹{m.avgOrderValue}</span></div>
+          <div style={rowStyle}><span>− Raw material cost</span><span>₹{m.rawMaterialTotal}</span></div>
+          <div style={rowStyle}><span>− Staff salary</span><span>₹{m.staffSalary}</span></div>
+          <div style={rowStyle}><span>− Electricity bill</span><span>₹{m.electricityBill}</span></div>
           <div style={{ ...rowStyle, borderTop: "1px solid #00000015", marginTop: 8, paddingTop: 10, fontWeight: 700 }}>
             <span>Final profit</span>
-            <span style={{ color: stats.profit.finalProfit >= 0 ? "#1a7a3c" : "crimson" }}>₹{stats.profit.finalProfit}</span>
+            <span style={{ color: m.finalProfit >= 0 ? "#1a7a3c" : "crimson" }}>₹{m.finalProfit}</span>
           </div>
         </section>
 
-        <section style={cardStyle}>
-          <h3 style={cardHeading}>Add today's raw material cost</h3>
-          <div style={{ display: "flex", gap: 8 }}>
-            <input type="number" placeholder="Amount (₹)" value={todayCost} onChange={(e) => setTodayCost(e.target.value)} style={inputStyle} />
-            <button onClick={logRawMaterial} disabled={saving || !todayCost} style={btnStyle}>ADD</button>
-          </div>
-        </section>
+        {m.topDesserts?.length > 0 && (
+          <section style={cardStyle}>
+            <h3 style={cardHeading}>Top sellers — {monthLabel(month)}</h3>
+            {m.topDesserts.map((d, i) => (
+              <div key={d.name} style={rowStyle}>
+                <span>{i + 1}. {d.name} × {d.quantity}</span>
+                <span>₹{d.revenue}</span>
+              </div>
+            ))}
+          </section>
+        )}
 
-        <section style={cardStyle}>
-          <h3 style={cardHeading}>This month's staff salary &amp; electricity bill</h3>
-          <input type="number" placeholder="Staff salary (₹)" value={salaryInput} onChange={(e) => setSalaryInput(e.target.value)} style={{ ...inputStyle, width: "100%" }} />
-          <input type="number" placeholder="Electricity bill (₹)" value={elecInput} onChange={(e) => setElecInput(e.target.value)} style={{ ...inputStyle, width: "100%", marginTop: 8 }} />
-          <button onClick={saveMonthlyCosts} disabled={saving} style={{ ...btnStyle, width: "100%", marginTop: 10 }}>SAVE</button>
-          {msg && <p style={{ fontSize: 12, color: "#666", marginTop: 8 }}>{msg}</p>}
+        {m.categoryBreakdown?.length > 0 && (
+          <section style={cardStyle}>
+            <h3 style={cardHeading}>Revenue by category — {monthLabel(month)}</h3>
+            {m.categoryBreakdown.map((c) => (
+              <div key={c.category} style={rowStyle}>
+                <span style={{ textTransform: "capitalize" }}>{c.category}</span>
+                <span>₹{c.revenue}</span>
+              </div>
+            ))}
+          </section>
+        )}
+
+        {isCurrentMonth && (
+          <>
+            <section style={cardStyle}>
+              <h3 style={cardHeading}>Add today's raw material cost</h3>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input type="number" placeholder="Amount (₹)" value={todayCost} onChange={(e) => setTodayCost(e.target.value)} style={inputStyle} />
+                <button onClick={logRawMaterial} disabled={saving || !todayCost} style={btnStyle}>ADD</button>
+              </div>
+            </section>
+
+            <section style={cardStyle}>
+              <h3 style={cardHeading}>This month's staff salary &amp; electricity bill</h3>
+              <input type="number" placeholder="Staff salary (₹)" value={salaryInput} onChange={(e) => setSalaryInput(e.target.value)} style={{ ...inputStyle, width: "100%" }} />
+              <input type="number" placeholder="Electricity bill (₹)" value={elecInput} onChange={(e) => setElecInput(e.target.value)} style={{ ...inputStyle, width: "100%", marginTop: 8 }} />
+              <button onClick={saveMonthlyCosts} disabled={saving} style={{ ...btnStyle, width: "100%", marginTop: 10 }}>SAVE</button>
+              {msg && <p style={{ fontSize: 12, color: "#666", marginTop: 8 }}>{msg}</p>}
+            </section>
+          </>
+        )}
+
+        <section style={{ ...cardStyle, background: PLUM, color: "#fff" }}>
+          <h3 style={{ ...cardHeading, color: "#D8B36A" }}>All-time totals</h3>
+          <div style={{ ...rowStyle, color: "#fff" }}><span>Revenue (ever)</span><span>₹{stats.allTime.revenue}</span></div>
+          <div style={{ ...rowStyle, color: "#fff" }}><span>Orders (ever)</span><span>{stats.allTime.orders}</span></div>
+          <div style={{ ...rowStyle, color: "#fff" }}><span>− Raw material cost</span><span>₹{stats.allTime.rawMaterialTotal}</span></div>
+          <div style={{ ...rowStyle, color: "#fff" }}><span>− Staff salary</span><span>₹{stats.allTime.staffSalary}</span></div>
+          <div style={{ ...rowStyle, color: "#fff" }}><span>− Electricity bill</span><span>₹{stats.allTime.electricityBill}</span></div>
+          <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #FFFFFF33", marginTop: 8, paddingTop: 10, fontWeight: 700 }}>
+            <span>Total profit</span>
+            <span style={{ color: stats.allTime.profit >= 0 ? "#8fe3a8" : "#ff9b9b" }}>₹{stats.allTime.profit}</span>
+          </div>
         </section>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 }}>
-          {tiles.map(([label, value]) => (
+          {liveTiles.map(([label, value]) => (
             <div key={label} style={tileStyle}>
               <p style={{ margin: 0, fontSize: 24, fontWeight: 700, color: PLUM }}>{value}</p>
               <p style={{ margin: "4px 0 0", fontSize: 12, color: "#666" }}>{label}</p>
@@ -141,3 +215,4 @@ const cardHeading = { margin: "0 0 10px", fontSize: 13, letterSpacing: 0.5, colo
 const rowStyle = { display: "flex", justifyContent: "space-between", fontSize: 14, padding: "4px 0" };
 const inputStyle = { flex: 1, padding: 10, borderRadius: 6, border: "1px solid #00000030", fontSize: 14 };
 const btnStyle = { padding: "10px 16px", borderRadius: 6, border: "none", background: PLUM, color: "#fff", fontSize: 13, fontWeight: 600 };
+const navBtnStyle = { padding: "8px 16px", borderRadius: 6, border: "1px solid #00000020", background: "#fff", color: PLUM, fontWeight: 700, fontSize: 16 };
