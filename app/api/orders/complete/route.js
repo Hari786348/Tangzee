@@ -33,5 +33,8 @@ export async function POST(req) {
     .eq("customer_id", order.customer_id)
     .single();
 
-  return NextResponse.json({ order, cycle });
+  // A milkshake/snack-only order doesn't touch loyalty_cycles at all
+  // (points only count for "dessert" category items), so there may be
+  // no row yet — fall back to 0/7 rather than returning null.
+  return NextResponse.json({ order, cycle: cycle || { current_progress: 0, completed_cycles: 0 } });
 }
