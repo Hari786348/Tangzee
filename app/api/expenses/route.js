@@ -67,6 +67,11 @@ export async function POST(req) {
     details: { date, amount: Number(amount) },
   });
 
+  // That month's saved analytics are now stale — clear the cache so
+  // it recomputes with this new cost included next time it's viewed.
+  const affectedMonth = `${date.slice(0, 7)}-01`;
+  await db.from("monthly_snapshots").delete().eq("month", affectedMonth);
+
   return NextResponse.json({ entry: data });
 }
 
@@ -105,6 +110,9 @@ export async function PATCH(req) {
     record_id: data.id,
     details: { month: monthStart, staffSalary: data.staff_salary, electricityBill: data.electricity_bill },
   });
+
+  // Clear any cached snapshot for this month so it recomputes fresh.
+  await db.from("monthly_snapshots").delete().eq("month", monthStart);
 
   return NextResponse.json({ monthlyCost: data });
 }
